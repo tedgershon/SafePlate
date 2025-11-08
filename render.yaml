@@ -13,16 +13,7 @@ services:
         generateValue: true
       - key: DJANGO_SETTINGS_MODULE
         value: safeplate_project.settings
-      - key: DATABASE_URL
-        fromDatabase:
-          name: safeplate-db
-          property: connectionString
       - key: AIRIA_API_KEY
         sync: false
       - key: AIRIA_RECIPE_AGENT_ENDPOINT
         sync: false
-
-databases:
-  - name: safeplate-db
-    databaseName: safeplate
-    user: safeplate

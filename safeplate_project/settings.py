@@ -82,14 +82,18 @@ WSGI_APPLICATION = 'safeplate_project.wsgi.application'
 
 import dj_database_url
 
-if RENDER:
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    # Use PostgreSQL if DATABASE_URL is provided (production)
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
+            default=DATABASE_URL,
             conn_max_age=600
         )
     }
 else:
+    # Fallback to SQLite for local development or if no DATABASE_URL
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
