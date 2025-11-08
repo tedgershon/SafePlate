@@ -141,6 +141,7 @@
             margin: 15px 0;
             line-height: 1.6;
             color: #333;
+            white-space: pre-wrap; /* This will respect newlines in the recipe text */
         }
         
         .safety-notes {
@@ -201,7 +202,7 @@
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
                     {% if field.help_text %}
-                        <span class="helptext">{{ field.help_text }}</span>
+                        <span classD="helptext">{{ field.help_text }}</span>
                     {% endif %}
                     {% if field.errors %}
                         <div style="color: #dc3545; margin-top: 5px;">
@@ -223,7 +224,7 @@
                 </span>
                 
                 <div class="recipe-text">
-                    {{ result.recipe_text }}
+                    {{ result.recipe_text|linebreaksbr }}
                 </div>
                 
                 <div class="safety-notes {% if result.is_safe %}safe{% else %}unsafe{% endif %}">
