@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 # --- Airia configuration ---
 AIRIA_RECIPE_AGENT_ENDPOINT = os.environ.get("AIRIA_RECIPE_AGENT_ENDPOINT", "")
-# AIRIA_API_KEY = os.environ.get("AIRIA_API_KEY", "")
 AIRIA_API_KEY = os.environ.get("AIRIA_API_KEY", "")
 AIRIA_USER_ID = os.environ.get("AIRIA_USER_ID", "")
 
