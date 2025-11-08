@@ -6,9 +6,9 @@ An AI-powered recipe generator which combines cuisine preferences, known allergi
 ## Tech Stack
 
 - **Backend:** Django 5.2.8
-- **Database:** SQLite (dev), PostgreSQL (prod)
+- **Database:** SQLite
 - **AI Agents:** Airia Multi-Agent System (OpenAI GPT-4.1, Claude 4 Sonnet)
-- **Testing:** Django TestCase, pytest
+- **Testing:** Django TestCase
 - **Python:** 3.12.4
 
 ## Setup
@@ -103,13 +103,24 @@ python manage.py test recipes
 SafePlate/
 ├── manage.py                 # Django management script
 ├── requirements.txt          # Python dependencies
+├── .env                      # Environment variables (Airia API keys)
+├── .gitignore               # Git ignore rules
+├── db.sqlite3               # SQLite database
+
 ├── recipes/                  # Main Django app
 │   ├── models.py            # Database models (RecipeRequest, GeneratedRecipe)
 │   ├── views.py             # Business logic & agent orchestration
 │   ├── forms.py             # Form definitions
 │   ├── tests.py             # Test suite (37 tests)
 │   ├── urls.py              # URL routing
-│   └── templates/           # HTML templates
-└── safeplate_project/       # Django project settings
-    └── settings.py          # Project configuration
+│   ├── admin.py            # Django admin configuration
+│   ├── apps.py             # App configuration
+│   ├── migrations/         # Database migrations
+│   ├── static/             # Static files (logos, CSS)
+│   └── templates/          # HTML templates
+└── safeplate_project/      # Django project settings
+    ├── settings.py         # Project configuration
+    ├── urls.py             # Main URL configuration
+    ├── wsgi.py             # WSGI server configuration
+    └── asgi.py             # ASGI server configuration
 ```
