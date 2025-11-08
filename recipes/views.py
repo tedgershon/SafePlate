@@ -28,7 +28,7 @@ def _simulate_chef_agent(cuisine, allergies, ingredients, attempt=1):
     cuisine_text = f'{cuisine_name} ' if cuisine else ''
     
     return {
-        'recipe_name': f'Safe {cuisine_text}Delight',
+        'recipe_name': f'Safe {cuisine_name} Delight' if cuisine else 'Safe Delight',
         'recipe_text': f'A delicious {cuisine_text}recipe using {ingredients_str}. This recipe is carefully crafted to avoid all allergens{" including: " + allergies if allergies else ""}. Cook with care and enjoy!',
     }
 
