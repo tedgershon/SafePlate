@@ -200,8 +200,7 @@ def parse_agent_output(agent_result: dict) -> dict:
             print(f"WARNING: Missing keys in agent output: {', '.join(missing_keys)}")
             print(f"Available keys: {list(output.keys())}")
             # Append warning to safety_notes
-            if missing_keys:
-                safety_notes += f" [WARNING: Response missing keys: {', '.join(missing_keys)}]"
+            safety_notes += f" [WARNING: Response missing keys: {', '.join(missing_keys)}]"
     else:
         return {
             "recipe_name": recipe_name, 
