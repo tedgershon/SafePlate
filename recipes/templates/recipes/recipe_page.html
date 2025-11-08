@@ -1,9 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafePlate - AI-Powered Allergy-Safe Recipe Generator</title>
+    <link rel="icon" type="image/png" href="{% static 'Logo_small.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'Logo.png' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
@@ -26,18 +29,28 @@
         }
         
         .logo {
-            font-size: 3.5em;
             margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .logo img {
+            height: 120px;
+            width: auto;
+            filter: drop-shadow(0 10px 30px rgba(59, 130, 246, 0.3));
+            transition: transform 0.3s ease;
+        }
+        
+        .logo img:hover {
+            transform: scale(1.05);
             filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));
         }
         
         .brand-title {
             font-size: 3em;
             font-weight: 800;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #8b5cf6;
             margin-bottom: 15px;
             letter-spacing: -1px;
         }
@@ -523,7 +536,9 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">🍽️</div>
+        <div class="logo">
+            <img src="{% static 'Logo_small.png' %}" alt="SafePlate Logo">
+        </div>
         <h1 class="brand-title">SafePlate</h1>
         <p class="brand-subtitle">
             AI-Powered Allergy-Safe Recipe Generation with Real-Time Safety Verification
