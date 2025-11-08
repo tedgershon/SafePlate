@@ -20,11 +20,13 @@ AIRIA_RECIPE_AGENT_ENDPOINT = os.environ.get(
     "AIRIA_RECIPE_AGENT_ENDPOINT",
     "https://api.airia.ai/v2/PipelineExecution/15c2b6ab-5201-4c72-beef-33ec20c9603d"
 )
-AIRIA_API_KEY = os.environ.get("AIRIA_API_KEY", "")
+# AIRIA_API_KEY = os.environ.get("AIRIA_API_KEY", "")
+AIRIA_API_KEY="ak-MzEyNzEwMDU0NXwxNzYyNjI5NDQ0ODIyfHRpLVEyRnlibVZuYVdVZ1RXVnNiRzl1SUZWdWFYWmxjbk5wZEhrdFQzQmxiaUJTWldkcGMzUnlZWFJwYjI0dFVISnZabVZ6YzJsdmJtRnNYek0xTTJVeE1qRTBMVEE0WW1VdE5ERTFOQzFpWVdFeExXWTRObU5oTlRFeE5XWmpOZz09fDF8MTEyNjE1MDk0MiAg"
 AIRIA_USER_ID = os.environ.get("AIRIA_USER_ID", "")
 
 
 def _ensure_guid_or_generate(candidate: str) -> str:
+    """Ensure AIRIA_USER_ID is a valid GUID, generate one if missing or invalid."""
     if not candidate:
         return str(uuid.uuid4())
     try:
@@ -59,16 +61,15 @@ def _build_strict_prompt(cuisine: str, allergies: str, ingredients: str, previou
 
 def call_recipe_agent(cuisine: str, allergies: str, ingredients: str, previous_error: str = "") -> Dict[str, Any]:
     """
-    Call Airia pipeline with strict Chef SafePlate instructions.
-    Returns raw JSON/dict from the agent.
+    Call Airia pipeline and return JSON output from the agent.
     """
     if not AIRIA_API_KEY:
         return {"error": "AIRIA_API_KEY not set in environment."}
 
-    user_id_guid = _ensure_guid_or_generate(AIRIA_USER_ID)
     user_input_str = _build_strict_prompt(cuisine, allergies, ingredients, previous_error)
 
     payload = {
+<<<<<<< HEAD
         "request": {
             "userId": user_id_guid,
             "userInput": user_input_str,
@@ -80,10 +81,22 @@ def call_recipe_agent(cuisine: str, allergies: str, ingredients: str, previous_e
         "X-API-Key": AIRIA_API_KEY,
         "Content-Type": "application/json",
         "Accept": "application/json",
+=======
+        "userId": _ensure_guid_or_generate(AIRIA_USER_ID),
+        "userInput": user_input_str,
+        "asyncOutput": False
+    }
+
+    headers = {
+        "X-API-KEY": AIRIA_API_KEY,
+        "Content-Type": "application/json"
+>>>>>>> 61656806e738e07c5889ce7e809eb9f98bac46d5
     }
 
     try:
         resp = requests.post(AIRIA_RECIPE_AGENT_ENDPOINT, headers=headers, json=payload, timeout=60)
+        print("\nThis is the payload")
+        print(payload)
         resp.raise_for_status()
         api_data = resp.json()
         return api_data
@@ -105,25 +118,38 @@ def parse_agent_output(agent_result: dict) -> dict:
     safety_notes = ""
 
     if not isinstance(agent_result, dict):
+        print("NOT DICT INSTANCE")
         return {"recipe_name": recipe_name, "recipe_text": recipe_text, "is_safe": False,
                 "safety_notes": f"Invalid agent output: {agent_result}"}
 
-    # Handle 'output' field containing stringified JSON
-    output = agent_result.get("output", agent_result)
-
-    if isinstance(output, str):
-        s = output.strip()
-        first = s.find("{")
-        last = s.rfind("}")
-        if first != -1 and last != -1 and last > first:
+    # Check for "result" key first (new Airia response format)
+    if "result" in agent_result:
+        result_data = agent_result["result"]
+        if isinstance(result_data, str):
             try:
-                output = json.loads(s[first:last+1])
-            except json.JSONDecodeError:
+                output = json.loads(result_data)
+            except json.JSONDecodeError as e:
                 return {"recipe_name": recipe_name, "recipe_text": recipe_text, "is_safe": False,
-                        "safety_notes": f"Failed to parse JSON from agent string: {s[:200]}"}
+                        "safety_notes": f"Failed to parse JSON from result string: {e}"}
         else:
-            return {"recipe_name": recipe_name, "recipe_text": recipe_text, "is_safe": False,
-                    "safety_notes": f"No JSON object found in agent output: {s[:200]}"}
+            output = result_data
+    else:
+        # Fallback: Some Airia responses may wrap JSON in an "output" string
+        output = agent_result.get("output", agent_result)
+
+        if isinstance(output, str):
+            s = output.strip()
+            first = s.find("{")
+            last = s.rfind("}")
+            if first != -1 and last != -1 and last > first:
+                try:
+                    output = json.loads(s[first:last+1])
+                except json.JSONDecodeError:
+                    return {"recipe_name": recipe_name, "recipe_text": recipe_text, "is_safe": False,
+                            "safety_notes": f"Failed to parse JSON from agent string: {s[:200]}"}
+            else:
+                return {"recipe_name": recipe_name, "recipe_text": recipe_text, "is_safe": False,
+                        "safety_notes": f"No JSON object found in agent output: {s[:200]}"}
 
     if isinstance(output, dict):
         recipe_name = output.get("recipe_name") or output.get("title") or recipe_name
@@ -150,9 +176,13 @@ def generate_safe_recipe(request):
 
         # Call Airia agent
         agent_result = call_recipe_agent(cuisine, allergies, ingredients)
+        print("\nThis is agent result")
+        print(agent_result)
 
         # Parse output safely
         parsed_result = parse_agent_output(agent_result)
+        print("\nThis is the final parsed result")
+        print(parsed_result)
 
         # Save GeneratedRecipe
         generated_recipe = GeneratedRecipe.objects.create(
@@ -172,6 +202,4 @@ def generate_safe_recipe(request):
             "all_attempts": all_attempts_qs
         }
 
-        return render(request, "recipes/recipe_page.html", {"form": form, "result": result})
-
-    return render(request, "recipes/recipe_page.html", {"form": form, "result": None})
+    return render(request, "recipes/recipe_page.html", {"form": form, "result": result})
