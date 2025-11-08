@@ -38,6 +38,10 @@ def _ensure_guid_or_generate(candidate: str) -> str:
 def _build_strict_prompt(cuisine: str, allergies: str, ingredients: str, previous_error: str = "") -> str:
     """
     Build a strict instruction for Chef SafePlate agent to force JSON-only output.
+    Simulates a chef agent that generates recipes.
+    On first attempt, intentionally generates unsafe 'Pesto' recipe if 'nuts' allergy is present.
+    On subsequent attempts, generates a safe alternative.
+    All parameters are optional filters - blank values mean no filter applied.
     """
     instruction = (
         "INSTRUCTION: You are ONLY a recipe-generation model. "
@@ -79,7 +83,55 @@ def call_recipe_agent(cuisine: str, allergies: str, ingredients: str, previous_e
     headers = {
         "X-API-Key": AIRIA_API_KEY,
         "Content-Type": "application/json",
-        "Accept": "application/json",
+        "Accept": "application/json"
+    }
+    
+    # Safe alternative or normal recipe
+    ingredients_list = [i.strip() for i in ingredients.split(',') if i.strip()]
+    ingredients_str = ', '.join(ingredients_list[:3]) if ingredients_list else 'seasonal vegetables'
+    
+    # Handle blank cuisine
+    cuisine_name = cuisine.strip() if cuisine else 'delicious'
+    cuisine_text = f'{cuisine_name} ' if cuisine else ''
+    
+    return {
+        'recipe_name': f'Safe {cuisine_name} Delight' if cuisine else 'Safe Delight',
+        'recipe_text': f'A delicious {cuisine_text}recipe using {ingredients_str}. This recipe is carefully crafted to avoid all allergens{" including: " + allergies if allergies else ""}. Cook with care and enjoy!',
+    }
+
+
+def _simulate_inspector_agent(recipe_name, recipe_text, allergies):
+    """
+    Simulates an inspector agent that checks recipe safety.
+    Fails any recipe containing 'Pesto' if 'nuts' allergy is present.
+    If allergies is blank, always passes as safe (no filters to check).
+    """
+    # If no allergies specified, recipe is safe by default
+    if not allergies or not allergies.strip():
+        return {
+            'is_safe': True,
+            'safety_notes': 'Recipe has been verified safe (no allergy restrictions specified).',
+        }
+    
+    allergies_list = [a.strip().lower() for a in allergies.split(',') if a.strip()]
+    
+    # Check if recipe contains allergens
+    if 'nuts' in allergies_list and 'pesto' in recipe_name.lower():
+        return {
+            'is_safe': False,
+            'safety_notes': 'UNSAFE: Recipe contains pesto which typically includes pine nuts. This violates the nuts allergy restriction.',
+        }
+    
+    # Additional check for pine nuts in recipe text
+    if 'nuts' in allergies_list and 'pine nuts' in recipe_text.lower():
+        return {
+            'is_safe': False,
+            'safety_notes': 'UNSAFE: Recipe explicitly mentions pine nuts which are prohibited due to nut allergy.',
+        }
+    
+    return {
+        'is_safe': True,
+        'safety_notes': 'Recipe has been verified safe for all specified allergies.',
     }
 
     try:
