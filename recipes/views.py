@@ -32,7 +32,7 @@ def _ensure_guid_or_generate(candidate: str) -> str:
     try:
         u = uuid.UUID(candidate)
         return str(u)
-    except Exception:
+    except (ValueError, AttributeError):
         logger.warning("AIRIA_USER_ID is not a valid GUID; generating a new UUID for this request.")
         return str(uuid.uuid4())
 
