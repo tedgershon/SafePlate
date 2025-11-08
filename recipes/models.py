@@ -3,13 +3,14 @@ from django.db import models
 
 class RecipeRequest(models.Model):
     """Model to store recipe generation requests"""
-    cuisine = models.CharField(max_length=100)
-    allergies = models.TextField(help_text="Comma-separated list of allergies")
-    ingredients = models.TextField(help_text="Comma-separated list of ingredients")
+    cuisine = models.CharField(max_length=100, blank=True, default='')
+    allergies = models.TextField(help_text="Comma-separated list of allergies", blank=True, default='')
+    ingredients = models.TextField(help_text="Comma-separated list of ingredients", blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Recipe Request for {self.cuisine} cuisine"
+        cuisine_text = self.cuisine if self.cuisine else "any cuisine"
+        return f"Recipe Request for {cuisine_text}"
 
 
 class GeneratedRecipe(models.Model):
