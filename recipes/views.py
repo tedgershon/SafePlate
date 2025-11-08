@@ -105,7 +105,6 @@ def parse_agent_output(agent_result: dict) -> dict:
     recipe_name = "Untitled Recipe"
     recipe_text = "No recipe text provided."
     is_safe = False  # Default to False for safety
-    safety_notes = "Failed to parse agent output properly."
 
     if not isinstance(agent_result, dict):
         print("NOT DICT INSTANCE")
