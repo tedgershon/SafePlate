@@ -1,30 +1,20 @@
 from django import forms
 from .models import RecipeRequest
 
+
 class RecipeRequestForm(forms.ModelForm):
-    """
-    This form links the RecipeRequest model to the HTML template.
-    We add the 'form-control' class here so it matches your HTML styling.
-    """
+    """Form for submitting recipe requests"""
+    
     class Meta:
         model = RecipeRequest
         fields = ['cuisine', 'allergies', 'ingredients']
         widgets = {
-            'cuisine': forms.TextInput(attrs={
-                'class': 'form-control', 
-                'placeholder': 'e.g., Italian, Mexican, Japanese'
-            }),
-            'allergies': forms.TextInput(attrs={
-                'class': 'form-control', 
-                'placeholder': 'e.g., nuts, dairy, shellfish'
-            }),
-            'ingredients': forms.Textarea(attrs={
-                'class': 'form-control', 
-                'rows': 3, 
-                'placeholder': 'e.g., chicken, tomatoes, basil'
-            }),
+            'cuisine': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Italian, Chinese, Mexican (optional)'}),
+            'allergies': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'e.g., nuts, shellfish, dairy (optional)'}),
+            'ingredients': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'e.g., chicken, tomatoes, basil (optional)'}),
         }
-        help_texts = {
-            'allergies': 'Comma-separated list of allergies to avoid.',
-            'ingredients': 'Comma-separated list of ingredients you have or want to use.',
+        labels = {
+            'cuisine': 'Cuisine Type (Optional)',
+            'allergies': 'Allergies (Optional, comma-separated)',
+            'ingredients': 'Available Ingredients (Optional, comma-separated)',
         }
