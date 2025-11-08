@@ -104,21 +104,20 @@ SafePlate/
 ├── manage.py                 # Django management script
 ├── requirements.txt          # Python dependencies
 ├── .env                      # Environment variables (Airia API keys)
-├── .gitignore               # Git ignore rules
-├── db.sqlite3               # SQLite database
-
+├── .gitignore                # Git ignore rules
+├── db.sqlite3                # SQLite database
 ├── recipes/                  # Main Django app
-│   ├── models.py            # Database models (RecipeRequest, GeneratedRecipe)
-│   ├── views.py             # Business logic & agent orchestration
-│   ├── forms.py             # Form definitions
-│   ├── tests.py             # Test suite (37 tests)
-│   ├── urls.py              # URL routing
+│   ├── models.py           # Database models (RecipeRequest, GeneratedRecipe)
+│   ├── views.py            # Business logic & agent orchestration
+│   ├── forms.py            # Form definitions
+│   ├── tests.py            # Test suite (37 tests)
+│   ├── urls.py             # URL routing
 │   ├── admin.py            # Django admin configuration
 │   ├── apps.py             # App configuration
 │   ├── migrations/         # Database migrations
 │   ├── static/             # Static files (logos, CSS)
 │   └── templates/          # HTML templates
-└── safeplate_project/      # Django project settings
+└── safeplate_project/        # Django project settings
     ├── settings.py         # Project configuration
     ├── urls.py             # Main URL configuration
     ├── wsgi.py             # WSGI server configuration
