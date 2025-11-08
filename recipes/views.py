@@ -8,6 +8,7 @@ def _simulate_chef_agent(cuisine, allergies, ingredients, attempt=1):
     Simulates a chef agent that generates recipes.
     On first attempt, intentionally generates unsafe 'Pesto' recipe if 'nuts' allergy is present.
     On subsequent attempts, generates a safe alternative.
+    All parameters are optional filters - blank values mean no filter applied.
     """
     allergies_list = [a.strip().lower() for a in allergies.split(',') if a.strip()]
     
@@ -22,9 +23,13 @@ def _simulate_chef_agent(cuisine, allergies, ingredients, attempt=1):
     ingredients_list = [i.strip() for i in ingredients.split(',') if i.strip()]
     ingredients_str = ', '.join(ingredients_list[:3]) if ingredients_list else 'seasonal vegetables'
     
+    # Handle blank cuisine
+    cuisine_name = cuisine.strip() if cuisine else 'delicious'
+    cuisine_text = f'{cuisine_name} ' if cuisine else ''
+    
     return {
-        'recipe_name': f'Safe {cuisine} Delight',
-        'recipe_text': f'A delicious {cuisine} recipe using {ingredients_str}. This recipe is carefully crafted to avoid all allergens including: {allergies}. Cook with care and enjoy!',
+        'recipe_name': f'Safe {cuisine_name} Delight' if cuisine else 'Safe Delight',
+        'recipe_text': f'A delicious {cuisine_text}recipe using {ingredients_str}. This recipe is carefully crafted to avoid all allergens{" including: " + allergies if allergies else ""}. Cook with care and enjoy!',
     }
 
 
@@ -32,7 +37,15 @@ def _simulate_inspector_agent(recipe_name, recipe_text, allergies):
     """
     Simulates an inspector agent that checks recipe safety.
     Fails any recipe containing 'Pesto' if 'nuts' allergy is present.
+    If allergies is blank, always passes as safe (no filters to check).
     """
+    # If no allergies specified, recipe is safe by default
+    if not allergies or not allergies.strip():
+        return {
+            'is_safe': True,
+            'safety_notes': 'Recipe has been verified safe (no allergy restrictions specified).',
+        }
+    
     allergies_list = [a.strip().lower() for a in allergies.split(',') if a.strip()]
     
     # Check if recipe contains allergens
