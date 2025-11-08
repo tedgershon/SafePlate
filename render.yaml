@@ -3,10 +3,12 @@ services:
     name: safeplate
     runtime: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn safeplate_project.wsgi:application"
+    startCommand: "gunicorn safeplate_project.wsgi:application --bind 0.0.0.0:$PORT"
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
+      - key: RENDER
+        value: true
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: DJANGO_SETTINGS_MODULE
