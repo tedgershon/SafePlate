@@ -21,7 +21,7 @@ AIRIA_RECIPE_AGENT_ENDPOINT = os.environ.get(
     "https://api.airia.ai/v2/PipelineExecution/15c2b6ab-5201-4c72-beef-33ec20c9603d"
 )
 # AIRIA_API_KEY = os.environ.get("AIRIA_API_KEY", "")
-AIRIA_API_KEY="ak-MzEyNzEwMDU0NXwxNzYyNjI5NDQ0ODIyfHRpLVEyRnlibVZuYVdVZ1RXVnNiRzl1SUZWdWFYWmxjbk5wZEhrdFQzQmxiaUJTWldkcGMzUnlZWFJwYjI0dFVISnZabVZ6YzJsdmJtRnNYek0xTTJVeE1qRTBMVEE0WW1VdE5ERTFOQzFpWVdFeExXWTRObU5oTlRFeE5XWmpOZz09fDF8MTEyNjE1MDk0MiAg"
+AIRIA_API_KEY="ak-MzkwNTAzMjkwNHwxNzYyNjM3MDY0MzE2fHRpLVEyRnlibVZuYVdVZ1RXVnNiRzl1SUZWdWFYWmxjbk5wZEhrdFQzQmxiaUJTWldkcGMzUnlZWFJwYjI0dFVISnZabVZ6YzJsdmJtRnNYek0xTTJVeE1qRTBMVEE0WW1VdE5ERTFOQzFpWVdFeExXWTRObU5oTlRFeE5XWmpOZz09fDF8NDE1NTIwOTczNCAg"
 AIRIA_USER_ID = os.environ.get("AIRIA_USER_ID", "")
 
 
@@ -69,19 +69,6 @@ def call_recipe_agent(cuisine: str, allergies: str, ingredients: str, previous_e
     user_input_str = _build_strict_prompt(cuisine, allergies, ingredients, previous_error)
 
     payload = {
-<<<<<<< HEAD
-        "request": {
-            "userId": user_id_guid,
-            "userInput": user_input_str,
-            "asyncOutput": False
-        }
-    }
-
-    headers = {
-        "X-API-Key": AIRIA_API_KEY,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-=======
         "userId": _ensure_guid_or_generate(AIRIA_USER_ID),
         "userInput": user_input_str,
         "asyncOutput": False
@@ -90,7 +77,6 @@ def call_recipe_agent(cuisine: str, allergies: str, ingredients: str, previous_e
     headers = {
         "X-API-KEY": AIRIA_API_KEY,
         "Content-Type": "application/json"
->>>>>>> 61656806e738e07c5889ce7e809eb9f98bac46d5
     }
 
     try:
@@ -169,7 +155,13 @@ def generate_safe_recipe(request):
     form = RecipeRequestForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
+        print("\n=== FORM DEBUG ===")
+        print("Cleaned data:", form.cleaned_data)
         recipe_request: RecipeRequest = form.save()
+        print("Saved cuisine:", recipe_request.cuisine)
+        print("Saved allergies:", recipe_request.allergies)
+        print("Saved ingredients:", recipe_request.ingredients)
+        
         cuisine = recipe_request.cuisine
         allergies = recipe_request.allergies
         ingredients = recipe_request.ingredients
