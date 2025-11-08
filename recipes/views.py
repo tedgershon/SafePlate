@@ -16,12 +16,9 @@ from .models import RecipeRequest, GeneratedRecipe
 logger = logging.getLogger(__name__)
 
 # --- Airia configuration ---
-AIRIA_RECIPE_AGENT_ENDPOINT = os.environ.get(
-    "AIRIA_RECIPE_AGENT_ENDPOINT",
-    "https://api.airia.ai/v2/PipelineExecution/15c2b6ab-5201-4c72-beef-33ec20c9603d"
-)
+AIRIA_RECIPE_AGENT_ENDPOINT = os.environ.get("AIRIA_RECIPE_AGENT_ENDPOINT", "")
 # AIRIA_API_KEY = os.environ.get("AIRIA_API_KEY", "")
-AIRIA_API_KEY="ak-MzkwNTAzMjkwNHwxNzYyNjM3MDY0MzE2fHRpLVEyRnlibVZuYVdVZ1RXVnNiRzl1SUZWdWFYWmxjbk5wZEhrdFQzQmxiaUJTWldkcGMzUnlZWFJwYjI0dFVISnZabVZ6YzJsdmJtRnNYek0xTTJVeE1qRTBMVEE0WW1VdE5ERTFOQzFpWVdFeExXWTRObU5oTlRFeE5XWmpOZz09fDF8NDE1NTIwOTczNCAg"
+AIRIA_API_KEY = os.environ.get("AIRIA_API_KEY", "")
 AIRIA_USER_ID = os.environ.get("AIRIA_USER_ID", "")
 
 
@@ -42,9 +39,9 @@ def _build_strict_prompt(cuisine: str, allergies: str, ingredients: str, previou
     Build a strict instruction for Chef SafePlate agent to force JSON-only output.
     """
     instruction = (
-        "INSTRUCTION: You are ONLY a recipe-generation model. "
-        "DO NOT introduce yourself or output any explanations or greetings. "
-        "OUTPUT ONLY a single JSON object with keys: recipe_name, recipe_text.\n\n"
+        "INSTRUCTION: You are ONLY a recipe-generation model with allergy check. "
+        "DO NOT introduce yourself or output any explanations or greetings.\n\n"
+        "OUTPUT ONLY a single JSON object with EXACTLY FOUR keys: is_safe, safety_notes, recipe_name, recipe_text.\n\n"
         f"User inputs:\n"
         f"cuisine: {cuisine}\n"
         f"allergies: {allergies}\n"
@@ -53,8 +50,16 @@ def _build_strict_prompt(cuisine: str, allergies: str, ingredients: str, previou
     if previous_error:
         instruction += f"previous_error: {previous_error}\n"
     instruction += (
-        "Return one valid JSON object ONLY, exactly like this structure:\n"
-        '{ "recipe_name": "Title", "recipe_text": "Ingredients and instructions with \\n line breaks." }'
+        "\n"
+        "Return one valid JSON object ONLY, with ALL FOUR keys, exactly like this structure:\n"
+        "{\n"
+        '  "is_safe": true,\n'
+        '  "safety_notes": "Recipe is safe for specified allergies. Precautions: ...",\n'
+        '  "recipe_name": "Your Recipe Title",\n'
+        '  "recipe_text": "Ingredients:\\n- ingredient 1\\n- ingredient 2\\n\\nInstructions:\\n1. Step one\\n2. Step two"\n'
+        "}\n\n"
+        "CRITICAL: You MUST include all four keys (is_safe, safety_notes, recipe_name, recipe_text) in your response.\n"
+        "Do not output ONLY recipe_name and recipe_text. All four keys are required."
     )
     return instruction
 
@@ -100,13 +105,17 @@ def parse_agent_output(agent_result: dict) -> dict:
     """
     recipe_name = "Untitled Recipe"
     recipe_text = "No recipe text provided."
-    is_safe = True
-    safety_notes = ""
+    is_safe = False  # Default to False for safety
+    safety_notes = "Failed to parse agent output properly."
 
     if not isinstance(agent_result, dict):
         print("NOT DICT INSTANCE")
-        return {"recipe_name": recipe_name, "recipe_text": recipe_text, "is_safe": False,
-                "safety_notes": f"Invalid agent output: {agent_result}"}
+        return {
+            "recipe_name": recipe_name, 
+            "recipe_text": recipe_text, 
+            "is_safe": False,
+            "safety_notes": f"Invalid agent output type: {type(agent_result)}"
+        }
 
     # Check for "result" key first (new Airia response format)
     if "result" in agent_result:
@@ -115,8 +124,12 @@ def parse_agent_output(agent_result: dict) -> dict:
             try:
                 output = json.loads(result_data)
             except json.JSONDecodeError as e:
-                return {"recipe_name": recipe_name, "recipe_text": recipe_text, "is_safe": False,
-                        "safety_notes": f"Failed to parse JSON from result string: {e}"}
+                return {
+                    "recipe_name": recipe_name, 
+                    "recipe_text": recipe_text, 
+                    "is_safe": False,
+                    "safety_notes": f"Failed to parse JSON from result string: {e}"
+                }
         else:
             output = result_data
     else:
@@ -130,20 +143,79 @@ def parse_agent_output(agent_result: dict) -> dict:
             if first != -1 and last != -1 and last > first:
                 try:
                     output = json.loads(s[first:last+1])
-                except json.JSONDecodeError:
-                    return {"recipe_name": recipe_name, "recipe_text": recipe_text, "is_safe": False,
-                            "safety_notes": f"Failed to parse JSON from agent string: {s[:200]}"}
+                except json.JSONDecodeError as e:
+                    return {
+                        "recipe_name": recipe_name, 
+                        "recipe_text": recipe_text, 
+                        "is_safe": False,
+                        "safety_notes": f"Failed to parse JSON from agent string. Error: {e}. Content preview: {s[:200]}"
+                    }
             else:
-                return {"recipe_name": recipe_name, "recipe_text": recipe_text, "is_safe": False,
-                        "safety_notes": f"No JSON object found in agent output: {s[:200]}"}
+                return {
+                    "recipe_name": recipe_name, 
+                    "recipe_text": recipe_text, 
+                    "is_safe": False,
+                    "safety_notes": f"No JSON object found in agent output. Content preview: {s[:200]}"
+                }
 
+    # Parse the output dictionary and extract all four keys
     if isinstance(output, dict):
         recipe_name = output.get("recipe_name") or output.get("title") or recipe_name
         recipe_text = output.get("recipe_text") or output.get("text") or recipe_text
-        is_safe = output.get("is_safe", True)
-        safety_notes = output.get("safety_notes", "")
+        
+        # Parse is_safe - handle both boolean and string representations
+        is_safe_raw = output.get("is_safe")
+        if isinstance(is_safe_raw, bool):
+            is_safe = is_safe_raw
+        elif isinstance(is_safe_raw, str):
+            is_safe = is_safe_raw.lower() in ["true", "yes", "1"]
+        else:
+            is_safe = False  # Default to False if not provided or invalid
+        
+        # Parse safety_notes - ensure it's a string
+        safety_notes_raw = output.get("safety_notes")
+        if isinstance(safety_notes_raw, str):
+            safety_notes = safety_notes_raw
+        elif safety_notes_raw is not None:
+            safety_notes = str(safety_notes_raw)
+        else:
+            # If safety_notes is missing, provide a default based on is_safe
+            if is_safe:
+                safety_notes = "No safety notes provided. Please verify ingredients for allergen safety."
+            else:
+                safety_notes = "Recipe marked as unsafe but no safety notes provided."
+        
+        # Validate that we got all expected keys
+        missing_keys = []
+        if "recipe_name" not in output and "title" not in output:
+            missing_keys.append("recipe_name")
+        if "recipe_text" not in output and "text" not in output:
+            missing_keys.append("recipe_text")
+        if "is_safe" not in output:
+            missing_keys.append("is_safe")
+        if "safety_notes" not in output:
+            missing_keys.append("safety_notes")
+        
+        if missing_keys:
+            print(f"WARNING: Missing keys in agent output: {', '.join(missing_keys)}")
+            print(f"Available keys: {list(output.keys())}")
+            # Append warning to safety_notes
+            if missing_keys:
+                safety_notes += f" [WARNING: Response missing keys: {', '.join(missing_keys)}]"
+    else:
+        return {
+            "recipe_name": recipe_name, 
+            "recipe_text": recipe_text, 
+            "is_safe": False,
+            "safety_notes": f"Parsed output is not a dictionary. Type: {type(output)}"
+        }
 
-    return {"recipe_name": recipe_name, "recipe_text": recipe_text, "is_safe": is_safe, "safety_notes": safety_notes}
+    return {
+        "recipe_name": recipe_name, 
+        "recipe_text": recipe_text, 
+        "is_safe": is_safe, 
+        "safety_notes": safety_notes
+    }
 
 
 @require_http_methods(["GET", "POST"])
